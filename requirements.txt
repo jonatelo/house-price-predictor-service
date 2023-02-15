@@ -1,8 +1,12 @@
 fastapi==0.92.0
+httpx==0.23.3
 ipykernel
 matplotlib==3.7.0
 numpy==1.24.2
 orjson==3.8.6
 pandas==1.5.3
+requests==2.28.2
 seaborn
 scikit-learn==1.2.1
+ujson==5.7.0
+uvicorn==0.20.0
