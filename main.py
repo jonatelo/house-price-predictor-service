@@ -3,6 +3,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from house_price_predictor import PredictorModel
+from pydantic import BaseModel
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.cors import CORSMiddleware
 from typing import Dict, Union
@@ -36,39 +37,56 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# data models
+class ModelInput(BaseModel):
+    overall_quality: int
+    neighborhood: str
+    bath_area: float
+    property_area: int
+    garage_area: int
+    garage_age: float
+    house_age: int
+    spaciousness: float
+    remodel_age: int
+    bsmt_area: int
+
+class PredictionModel(BaseModel):
+    prediction: float
+
+
+class PerformanceData(BaseModel):
+    rmse: float
+    mae: float
+
+class PerformanceModel(BaseModel):
+    train: PerformanceData
+    test: PerformanceData
+
+
 # Init PredictorModel
 predictor_model = PredictorModel(cfg.model_path)
 
 
 # model performance
 @app.get("/model_performance")
-def get_model_performance(request: Request):
+def get_model_performance(request: Request) -> PerformanceModel:
     client = f"{request.client.host}:{request.client.port}"
     logging.info(f"GET {request.url} from {client}")
     logging.info(f"200 response: {predictor_model.metrics}")
-    return predictor_model.metrics
+    response = predictor_model.metrics
+    return response
 
 
 # model prediction
 @app.get("/predict")
-def get_model_prediction(model_inputs: Dict[str, Union[int, float, str]], request: Request):
+def get_model_prediction(model_inputs: ModelInput, request: Request) -> PredictionModel:
     client = f"{request.client.host}:{request.client.port}"
     logging.info(f"GET {request.url} from {client}")
     # evaluate AD status
-    response = {
-        'prediction': predictor_model.predict(model_inputs),
-    }
+    predicted_price = predictor_model.predict(model_inputs.dict())
+    response = PredictionModel(prediction=predicted_price)
     logging.info(f"200 response: {response}")
     return response
-
-
-# Missing Endpoint
-@app.get("/")
-def missing_endpoint(request: Request):
-    client = f"{request.client.host}:{request.client.port}"
-    logging.info(f"GET {request.url} from {client}")
-    logging.error(f"404 missing endpoint")
-    raise HTTPException(status_code=400, detail='missing endpoint')
 
 
 # Wrong endpoint

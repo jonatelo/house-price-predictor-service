@@ -5,11 +5,11 @@ import pickle
 
 class PredictorModel(object):
 
-    def __init__(self, model_path):
+    def __init__(self, model_path: str):
         # load model_data
         with open(model_path, 'rb') as file:
             model_data = pickle.load(file)
-        # __init__
+        # init
         self.features_selected = model_data['features_selected']
         self.cat_maps = model_data['categorical_maps']
         self.features_median = model_data['features_median']
